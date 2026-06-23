@@ -1250,92 +1250,25 @@ REGLAS CRÍTICAS:
 ${d.injuries ? `11. Evita ejercicios que afecten: ${d.injuries}` : ''}
 ${d.preferences ? `12. Ten en cuenta: ${d.preferences}` : ''}
 
-RESPONDE CON ESTE JSON EXACTO (completa todos los campos):
-
+DEVUELVE ESTE JSON (sin texto extra antes ni después):
 {
-  "weekly_schedule": {
-    "0": "rest_or_session_key",
-    "1": "session_key",
-    "2": "session_key_or_rest",
-    "3": "session_key",
-    "4": "rest_or_session_key",
-    "5": "session_key",
-    "6": "rest_or_session_key"
-  },
+  "weekly_schedule": {"0":"rest","1":"sessionA","2":"rest","3":"sessionB","4":"rest","5":"sessionC","6":"rest"},
   "sessions": {
-    "session_key": {
-      "name": "NOMBRE — Subtítulo",
-      "icon": "💪",
-      "type": "gym",
-      "duration": "50-60 min",
-      "bg": "#eff6ff",
-      "tc": "#1d4ed8",
-      "exercises": [
-        {
-          "key": "exercise_key",
-          "name": "Nombre del ejercicio",
-          "sets": "4×8-10",
-          "weight": "peso en kg o 'Peso corporal'",
-          "note": "Técnica clave o consejo"
-        }
-      ]
-    },
-    "run_easy": {
-      "name": "CARRERA FÁCIL — Ritmo conversacional",
-      "icon": "🏃",
-      "type": "run",
-      "duration": "35-45 min",
-      "bg": "#fefce8",
-      "tc": "#854d0e",
-      "exercises": [
-        {"key": "easy_run", "name": "Trote aeróbico", "sets": "1×35-45 min", "weight": "Ritmo conversacional (60-70% FC máx)", "note": "Puedes mantener una conversación. Recuperación activa para el déficit calórico"}
-      ]
-    },
-    "rest": {
-      "name": "DESCANSO — Recuperación activa",
-      "icon": "😴",
-      "type": "rest",
-      "duration": "—",
-      "bg": "#f0fdf4",
-      "tc": "#166534",
-      "exercises": []
-    }
+    "sessionA": {"name":"NOMBRE — Subtítulo","icon":"💪","type":"gym","duration":"60 min","bg":"#eff6ff","tc":"#1d4ed8","exercises":[{"key":"ex1","name":"Ejercicio","sets":"4×8","weight":"Xkg","note":"consejo"}]},
+    "run_easy": {"name":"CARRERA FÁCIL — Ritmo suave","icon":"🏃","type":"run","duration":"35 min","bg":"#fefce8","tc":"#854d0e","exercises":[{"key":"run","name":"Trote aeróbico","sets":"1×35min","weight":"Ritmo conversacional","note":"60-70% FC máx"}]},
+    "rest": {"name":"DESCANSO — Recuperación activa","icon":"😴","type":"rest","duration":"—","bg":"#f0fdf4","tc":"#166534","exercises":[]}
   },
   "meal_plan": {
-    "1": [
-      {"time": "7:30", "icon": "☀️", "name": "Desayuno", "detail": "Descripción detallada con cantidades", "kcal": "~500 kcal · P: 40g · C: 45g · G: 15g"},
-      {"time": "10:30", "icon": "🍎", "name": "Media mañana", "detail": "...", "kcal": "~200 kcal · P: 15g"},
-      {"time": "14:00", "icon": "🍽️", "name": "Comida", "detail": "...", "kcal": "~700 kcal · P: 50g"},
-      {"time": "17:00", "icon": "⚡", "name": "Pre-entrenamiento", "detail": "...", "kcal": "~300 kcal · P: 20g"},
-      {"time": "21:00", "icon": "🌙", "name": "Cena", "detail": "...", "kcal": "~500 kcal · P: 40g"}
-    ],
-    "rest_day": [
-      {"time": "8:00", "icon": "☀️", "name": "Desayuno", "detail": "...", "kcal": "~450 kcal · P: 35g"},
-      {"time": "13:30", "icon": "🍽️", "name": "Comida", "detail": "...", "kcal": "~650 kcal · P: 45g"},
-      {"time": "20:30", "icon": "🌙", "name": "Cena", "detail": "...", "kcal": "~450 kcal · P: 35g"}
-    ]
+    "1": [{"time":"7:30","icon":"☀️","name":"Desayuno","detail":"descripción con cantidades","kcal":"~500kcal·P:40g·C:45g·G:15g"}],
+    "rest_day": [{"time":"8:00","icon":"☀️","name":"Desayuno","detail":"descripción","kcal":"~450kcal·P:35g"}]
   },
-  "goals": {
-    "start_weight": ${d.current_weight},
-    "target_weight": ${d.target_weight},
-    "target_date": "${d.goal_detail ? 'extract date from goal_detail if present, else estimate realistically' : 'estimate realistic date based on goal and rate of progress'}",
-    "event_label": "${d.goal_detail || ''}"
-  },
-  "progression_rules": [
-    "Aumenta el peso un 2.5-5% cuando completes todas las series con la técnica correcta durante 2 semanas consecutivas",
-    "Si no puedes completar las series, mantén el peso y añade 1 repetición por semana",
-    "Descansa entre 90 segundos y 2 minutos entre series de fuerza",
-    "Hidratación: mínimo 2.5L de agua al día"
-  ],
-  "running_zones": {
-    "easy": "Ritmo conversacional, puedes hablar sin dificultad, FC 60-70% del máximo",
-    "intervals": "Series de 400m o 1 min rápido / 1 min lento, sensación de esfuerzo 7-8/10",
-    "target_pace": "Estimado según nivel actual"
-  },
-  "coach_intro": "Mensaje personalizado de bienvenida de 2-3 frases para ${d.name}, mencionando su objetivo específico y motivándole. En español, cálido y directo."
+  "goals": {"start_weight":${d.current_weight},"target_weight":${d.target_weight},"target_date":"YYYY-MM-DD","event_label":"${d.goal_detail || ''}"},
+  "progression_rules": ["regla1","regla2","regla3"],
+  "running_zones": {"easy":"descripción zona fácil","intervals":"descripción intervalos","target_pace":"X:XX min/km estimado"},
+  "coach_intro": "Mensaje bienvenida personalizado 2-3 frases para ${d.name} en español"
 }
 
-IMPORTANTE: El weekly_schedule tiene claves del 0 (domingo) al 6 (sábado). Usa exactamente ${d.available_days} días de entrenamiento real. Las claves de las sesiones deben coincidir con las del objeto sessions. Si el día es descanso, usa "rest" como valor.`;
+REGLAS DEL JSON: weekly_schedule claves 0(dom)-6(sab). Exactamente ${d.available_days} días de entreno real. Claves de sessions deben coincidir con weekly_schedule. Sesiones de carrera SIEMPRE type:"run". meal_plan necesita claves "1" a "7" para días de entreno y "rest_day" para descanso. Añade todas las sesiones reales (no solo el ejemplo). El meal_plan debe tener horarios adaptados al turno ${timeMap[d.preferred_time] || 'tarde'}.`;
 }
 
 // ============================================================
