@@ -1313,7 +1313,7 @@ function renderCheckin(session, sessionKey) {
   }).join('');
 
   let extraFields = '';
-  if (!isRest && session?.type === 'run') {
+  if (!isRest && session?.type?.startsWith('run')) {
     extraFields = `
       <div class="checkin-field">
         <label>Km recorridos</label>
