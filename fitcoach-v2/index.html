@@ -1237,7 +1237,7 @@ ${d.preferences ? `- Preferencias y manías: ${d.preferences}` : ''}
 - Fecha de hoy: ${today}
 
 REGLAS CRÍTICAS:
-1. Distribuye ${d.available_days} días de entrenamiento en la semana de forma equilibrada
+1. OBLIGATORIO: EXACTAMENTE ${d.available_days} días de ENTRENAMIENTO REAL (no descanso) en weekly_schedule. Ni uno más ni uno menos. Cuenta los días que NO son "rest": deben ser ${d.available_days}. Esto es innegociable.
 2. Duración máxima de cada sesión: ${d.session_duration} minutos. Ajusta el número de ejercicios/series a este tiempo.
 3. NO uses ejercicios con barra si equipamiento es home o minimal
 4. Sí puedes usar mancuernas para home. Solo peso corporal + bandas para minimal.
@@ -1247,8 +1247,9 @@ REGLAS CRÍTICAS:
 8. Si el trabajo es físico activo, reduce también el volumen y añade más descansos
 9. NUNCA incluyas: clean & press olímpico, snatch, arrancada, o movimientos técnicamente complejos
 10. El plan nutricional debe ajustarse al turno de entrenamiento (${timeMap[d.preferred_time] || 'tarde'}) — pre/post entreno en los momentos correctos
-${d.injuries ? `11. Evita ejercicios que afecten: ${d.injuries}` : ''}
-${d.preferences ? `12. Ten en cuenta: ${d.preferences}` : ''}
+11. Si el usuario indica un tipo de rutina preferido (push/pull/piernas, torso/pierna, weider, fullbody...), RESPÉTALO exactamente. Si no indica nada, elige el split óptimo para sus días y objetivo.
+${d.injuries ? `12. Evita ejercicios que afecten: ${d.injuries}` : ''}
+${d.preferences ? `13. PRIORIDAD ALTA — respeta estas preferencias del usuario: ${d.preferences}` : ''}
 
 DEVUELVE ESTE JSON (sin texto extra antes ni después):
 {
@@ -1961,7 +1962,61 @@ function renderPlanSessions() {
         </div>
       </div>`;
   }
+  html += `
+    <div class="card" style="margin-top:16px;text-align:center">
+      <div class="card-title">🔄 ¿Quieres ajustar tu plan?</div>
+      <p style="font-size:13px;color:var(--sub);margin-bottom:12px;line-height:1.5">Pide cualquier cambio: tipo de rutina, más/menos días, otros ejercicios... y tu coach IA regenerará el plan.</p>
+      <button class="save-checkin-btn" onclick="openRegenerate()">✨ Regenerar plan</button>
+    </div>`;
   container.innerHTML = html || '<div class="empty-state"><p>Plan no disponible</p></div>';
+}
+
+async function openRegenerate() {
+  const tweak = prompt('¿Qué quieres cambiar en tu plan?\n\nEjemplos:\n• "Quiero rutina de empuje/tracción/pierna"\n• "Súbeme a 6 días de entreno"\n• "Mete más ejercicios de espalda"\n\n(Deja vacío para regenerar igual)');
+  if (tweak === null) return; // cancelado
+  await regeneratePlan(tweak.trim());
+}
+
+async function regeneratePlan(tweak) {
+  if (!userProfile) return;
+  const ex = userProfile.extra_data || {};
+  // Reconstruir los datos del onboarding desde el perfil guardado
+  const data = {
+    name: userProfile.name,
+    goal: userProfile.goal,
+    goal_detail: userProfile.goal_detail,
+    current_weight: userProfile.current_weight,
+    target_weight: userProfile.target_weight,
+    height: ex.height, age: ex.age,
+    fitness_level: userProfile.fitness_level,
+    consistency: ex.consistency, history: ex.history,
+    available_days: userProfile.available_days,
+    session_duration: ex.session_duration, preferred_time: ex.preferred_time,
+    equipment: userProfile.equipment,
+    job_type: ex.job_type, sleep_hours: ex.sleep_hours,
+    bench: ex.bench, squat: ex.squat, deadlift: ex.deadlift,
+    pullups: ex.pullups, ohp: ex.ohp, running: ex.running, other_marks: ex.other_marks,
+    injuries: userProfile.injuries,
+    // Inyectamos el cambio pedido como preferencia prioritaria
+    preferences: tweak ? `${tweak}. ${userProfile.preferences || ''}` : (userProfile.preferences || ''),
+  };
+
+  showToast('🔄 Regenerando tu plan...', 60000);
+  try {
+    const plan = await generatePlan(data);
+    const { error } = await sb.from('v2_profiles')
+      .update({ plan: plan, plan_generated_at: new Date().toISOString() })
+      .eq('id', currentUser.id);
+    if (error) throw new Error(error.message);
+    userProfile.plan = plan;
+    userPlan = plan;
+    document.getElementById('toast').classList.remove('show');
+    showToast('✅ ¡Plan actualizado!');
+    renderApp();
+  } catch(err) {
+    document.getElementById('toast').classList.remove('show');
+    showToast('❌ Error: ' + (err.message || 'inténtalo de nuevo'), 4000);
+  }
 }
 
 function renderPlanNutrition() {
