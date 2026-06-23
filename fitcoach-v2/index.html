@@ -1268,7 +1268,7 @@ DEVUELVE ESTE JSON (sin texto extra antes ni después):
   "coach_intro": "Mensaje bienvenida personalizado 2-3 frases para ${d.name} en español"
 }
 
-REGLAS DEL JSON: weekly_schedule claves 0(dom)-6(sab). Exactamente ${d.available_days} días de entreno real. Claves de sessions deben coincidir con weekly_schedule. Sesiones de carrera SIEMPRE type:"run". meal_plan necesita claves "1" a "7" para días de entreno y "rest_day" para descanso. Añade todas las sesiones reales (no solo el ejemplo). El meal_plan debe tener horarios adaptados al turno ${timeMap[d.preferred_time] || 'tarde'}.`;
+REGLAS DEL JSON (sé conciso para responder rápido): weekly_schedule claves 0(dom)-6(sab), exactamente ${d.available_days} días de entreno real. Claves de sessions deben coincidir con weekly_schedule. Sesiones de carrera SIEMPRE type:"run". El meal_plan SOLO tiene 2 claves: "1" (menú tipo de día de entreno, 5 comidas) y "rest_day" (día de descanso, 4 comidas) — NO generes un menú por cada día. Horarios adaptados al turno ${timeMap[d.preferred_time] || 'tarde'}. En "detail" de cada comida sé breve (1 frase con cantidades). Añade todas las sesiones de entreno reales necesarias.`;
 }
 
 // ============================================================
