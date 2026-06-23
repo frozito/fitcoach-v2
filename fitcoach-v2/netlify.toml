@@ -1,2 +1,5 @@
 [functions]
   directory = "netlify/functions"
+
+[functions."generate-plan"]
+  timeout = 30
