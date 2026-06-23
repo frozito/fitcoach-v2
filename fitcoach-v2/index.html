@@ -389,7 +389,7 @@ create policy "own records" on personal_records for all using (auth.uid() = user
     <div style="flex:1">
       <div class="step-emoji">👋</div>
       <div class="step-title">Hola, soy tu coach de IA.</div>
-      <div class="step-sub">Vamos a conocerte para crear tu plan de entrenamiento perfecto y totalmente personalizado.</div>
+      <div class="step-sub">Vamos a conocerte a fondo para crear tu plan perfecto. Tómate tu tiempo, merece la pena.</div>
       <input class="onboard-input" id="ob_name" type="text" placeholder="¿Cómo te llamas?" autocomplete="off" maxlength="30">
     </div>
     <div class="onboard-nav">
@@ -397,7 +397,7 @@ create policy "own records" on personal_records for all using (auth.uid() = user
     </div>
   </div>
 
-  <!-- Step 2 -->
+  <!-- Step 2: Objetivo -->
   <div class="onboard-step" id="step2">
     <div style="flex:1">
       <div class="step-emoji">🎯</div>
@@ -425,7 +425,7 @@ create policy "own records" on personal_records for all using (auth.uid() = user
     </div>
   </div>
 
-  <!-- Step 3 -->
+  <!-- Step 3: Cuerpo -->
   <div class="onboard-step" id="step3">
     <div style="flex:1">
       <div class="step-emoji">📊</div>
@@ -439,6 +439,14 @@ create policy "own records" on personal_records for all using (auth.uid() = user
         <div>
           <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Peso objetivo (kg)</label>
           <input class="onboard-input" id="ob_target_weight" type="number" step="0.1" min="30" max="300" placeholder="ej: 75.0" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Altura (cm)</label>
+          <input class="onboard-input" id="ob_height" type="number" min="130" max="230" placeholder="ej: 178" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Edad</label>
+          <input class="onboard-input" id="ob_age" type="number" min="14" max="90" placeholder="ej: 32" style="margin-bottom:0">
         </div>
       </div>
       <div class="step-sub" style="margin-bottom:16px">¿Cuál es tu nivel actual?</div>
@@ -463,8 +471,38 @@ create policy "own records" on personal_records for all using (auth.uid() = user
     </div>
   </div>
 
-  <!-- Step 4 -->
+  <!-- Step 4: Historial y consistencia -->
   <div class="onboard-step" id="step4">
+    <div style="flex:1">
+      <div class="step-emoji">📈</div>
+      <div class="step-title">Tu historial real</div>
+      <div class="step-sub">No el que querríamos tener, el real. Sin esto el plan saldrá mal calibrado.</div>
+      <div class="step-sub" style="margin-bottom:12px">¿Con qué consistencia has entrenado últimamente?</div>
+      <div class="big-cards" id="consistencyCards">
+        <div class="big-card" data-val="none" onclick="selectCard('consistencyCards',this)">
+          <span class="big-card-icon">😴</span>
+          <div class="big-card-text"><h3>Empezando de cero</h3><p>Llevo meses o años sin entrenar</p></div>
+        </div>
+        <div class="big-card" data-val="irregular" onclick="selectCard('consistencyCards',this)">
+          <span class="big-card-icon">🎲</span>
+          <div class="big-card-text"><h3>Irregular</h3><p>Entreno pero con muchas interrupciones</p></div>
+        </div>
+        <div class="big-card" data-val="consistent" onclick="selectCard('consistencyCards',this)">
+          <span class="big-card-icon">🔥</span>
+          <div class="big-card-text"><h3>Constante</h3><p>Entreno regularmente desde hace tiempo</p></div>
+        </div>
+      </div>
+      <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;margin-top:16px;text-transform:uppercase">Cuéntame más sobre tu historial (opcional)</label>
+      <textarea class="onboard-input onboard-textarea" id="ob_history" placeholder="Ej: Entrené 2 años hace 3 años, ahora llevo 6 meses volviendo a coger el ritmo..."></textarea>
+    </div>
+    <div class="onboard-nav">
+      <button class="btn-back" onclick="goStep(3)">←</button>
+      <button class="btn-next" id="next4" onclick="goStep(5)" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Disponibilidad y equipamiento -->
+  <div class="onboard-step" id="step5">
     <div style="flex:1">
       <div class="step-emoji">📅</div>
       <div class="step-title">Tu disponibilidad</div>
@@ -475,7 +513,21 @@ create policy "own records" on personal_records for all using (auth.uid() = user
         <button class="pill" data-val="5" onclick="selectPill('daysRow',this)">5 días</button>
         <button class="pill" data-val="6" onclick="selectPill('daysRow',this)">6 días</button>
       </div>
-      <div class="step-sub" style="margin-top:20px;margin-bottom:16px">¿Qué equipamiento tienes?</div>
+      <div class="step-sub" style="margin-top:16px;margin-bottom:12px">¿Cuánto tiempo tienes por sesión?</div>
+      <div class="pill-row" id="durationRow">
+        <button class="pill" data-val="45" onclick="selectPill('durationRow',this)">45 min</button>
+        <button class="pill" data-val="60" onclick="selectPill('durationRow',this)">1 hora</button>
+        <button class="pill" data-val="75" onclick="selectPill('durationRow',this)">75 min</button>
+        <button class="pill" data-val="90" onclick="selectPill('durationRow',this)">90 min</button>
+      </div>
+      <div class="step-sub" style="margin-top:16px;margin-bottom:12px">¿Cuándo prefieres entrenar?</div>
+      <div class="pill-row" id="timeRow">
+        <button class="pill" data-val="morning" onclick="selectPill('timeRow',this)">🌅 Mañana</button>
+        <button class="pill" data-val="midday" onclick="selectPill('timeRow',this)">☀️ Mediodía</button>
+        <button class="pill" data-val="evening" onclick="selectPill('timeRow',this)">🌆 Tarde</button>
+        <button class="pill" data-val="night" onclick="selectPill('timeRow',this)">🌙 Noche</button>
+      </div>
+      <div class="step-sub" style="margin-top:16px;margin-bottom:12px">¿Qué equipamiento tienes?</div>
       <div class="big-cards" id="equipCards">
         <div class="big-card" data-val="full_gym" onclick="selectCard('equipCards',this)">
           <span class="big-card-icon">🏋️</span>
@@ -492,13 +544,89 @@ create policy "own records" on personal_records for all using (auth.uid() = user
       </div>
     </div>
     <div class="onboard-nav">
-      <button class="btn-back" onclick="goStep(3)">←</button>
-      <button class="btn-next" id="next4" onclick="goStep(5)" disabled>Siguiente →</button>
+      <button class="btn-back" onclick="goStep(4)">←</button>
+      <button class="btn-next" id="next5" onclick="goStep(6)" disabled>Siguiente →</button>
     </div>
   </div>
 
-  <!-- Step 5 -->
-  <div class="onboard-step" id="step5">
+  <!-- Step 6: Estilo de vida -->
+  <div class="onboard-step" id="step6">
+    <div style="flex:1">
+      <div class="step-emoji">🧬</div>
+      <div class="step-title">Tu estilo de vida</div>
+      <div class="step-sub">Esto afecta directamente a tu recuperación y a las calorías que necesitas.</div>
+      <div class="step-sub" style="margin-bottom:12px">¿Cómo es tu trabajo o actividad diaria?</div>
+      <div class="big-cards" id="jobCards">
+        <div class="big-card" data-val="sedentary" onclick="selectCard('jobCards',this)">
+          <span class="big-card-icon">💻</span>
+          <div class="big-card-text"><h3>Sedentario</h3><p>Oficina, escritorio, poco movimiento</p></div>
+        </div>
+        <div class="big-card" data-val="moderate" onclick="selectCard('jobCards',this)">
+          <span class="big-card-icon">🚶</span>
+          <div class="big-card-text"><h3>Moderado</h3><p>De pie, camino bastante durante el día</p></div>
+        </div>
+        <div class="big-card" data-val="active" onclick="selectCard('jobCards',this)">
+          <span class="big-card-icon">⚒️</span>
+          <div class="big-card-text"><h3>Muy activo</h3><p>Trabajo físico, esfuerzo constante</p></div>
+        </div>
+      </div>
+      <div class="step-sub" style="margin-top:16px;margin-bottom:12px">¿Cuántas horas duermes de media?</div>
+      <div class="pill-row" id="sleepRow">
+        <button class="pill" data-val="5" onclick="selectPill('sleepRow',this)">≤5h</button>
+        <button class="pill" data-val="6" onclick="selectPill('sleepRow',this)">6h</button>
+        <button class="pill" data-val="7" onclick="selectPill('sleepRow',this)">7h</button>
+        <button class="pill" data-val="8" onclick="selectPill('sleepRow',this)">8h+</button>
+      </div>
+    </div>
+    <div class="onboard-nav">
+      <button class="btn-back" onclick="goStep(5)">←</button>
+      <button class="btn-next" id="next6" onclick="goStep(7)" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- Step 7: Marcas actuales -->
+  <div class="onboard-step" id="step7">
+    <div style="flex:1">
+      <div class="step-emoji">🏋️</div>
+      <div class="step-title">Tus marcas actuales</div>
+      <div class="step-sub">Esto es lo más importante para calibrar los pesos. Si no sabes, escribe "no sé" o déjalo vacío — el coach lo estimará.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Press banca (kg)</label>
+          <input class="onboard-input" id="ob_bench" type="text" placeholder="ej: 70 kg · 5 reps" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Sentadilla (kg)</label>
+          <input class="onboard-input" id="ob_squat" type="text" placeholder="ej: 90 kg · 5 reps" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Peso muerto (kg)</label>
+          <input class="onboard-input" id="ob_deadlift" type="text" placeholder="ej: 100 kg · 3 reps" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Dominadas seguidas</label>
+          <input class="onboard-input" id="ob_pullups" type="text" placeholder="ej: 8 reps" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Press militar (kg)</label>
+          <input class="onboard-input" id="ob_ohp" type="text" placeholder="ej: 50 kg · 5 reps" style="margin-bottom:0">
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase">Carrera (ritmo/distancia)</label>
+          <input class="onboard-input" id="ob_running" type="text" placeholder="ej: 5km en 28 min" style="margin-bottom:0">
+        </div>
+      </div>
+      <label style="color:rgba(255,255,255,.6);font-size:12px;font-weight:600;display:block;margin-bottom:6px;margin-top:8px;text-transform:uppercase">Otros ejercicios o marcas relevantes (opcional)</label>
+      <textarea class="onboard-input onboard-textarea" id="ob_other_marks" placeholder="Ej: Remo con barra 80kg, fondos con 20kg lastrados, curl bíceps 16kg..."></textarea>
+    </div>
+    <div class="onboard-nav">
+      <button class="btn-back" onclick="goStep(6)">←</button>
+      <button class="btn-next" onclick="goStep(8)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- Step 8: Restricciones y preferencias -->
+  <div class="onboard-step" id="step8">
     <div style="flex:1">
       <div class="step-emoji">🩺</div>
       <div class="step-title">Restricciones y preferencias</div>
@@ -509,13 +637,13 @@ create policy "own records" on personal_records for all using (auth.uid() = user
       <textarea class="onboard-input onboard-textarea" id="ob_preferences" placeholder="Ej: Odio correr, me encantan las dominadas, prefiero entrenar mañanas... (opcional)"></textarea>
     </div>
     <div class="onboard-nav">
-      <button class="btn-back" onclick="goStep(4)">←</button>
-      <button class="btn-next" onclick="goStep(6)">Generar mi plan 🚀</button>
+      <button class="btn-back" onclick="goStep(7)">←</button>
+      <button class="btn-next" onclick="goStep(9)">Generar mi plan 🚀</button>
     </div>
   </div>
 
-  <!-- Step 6 — Loading / AI Generation -->
-  <div class="onboard-step" id="step6" style="justify-content:center">
+  <!-- Step 9 — Loading / AI Generation -->
+  <div class="onboard-step" id="step9" style="justify-content:center">
     <div id="aiLoadingState">
       <div style="text-align:center;padding:20px 0">
         <div class="ai-spinner"></div>
@@ -845,10 +973,10 @@ async function loadUserAndStart() {
 function goStep(n) {
   document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
   document.getElementById('step'+n).classList.add('active');
-  const total = 5, pct = ((n-1)/total)*100;
+  const total = 8, pct = ((n-1)/total)*100;
   document.getElementById('progressFill').style.width = pct+'%';
   document.getElementById('progressLabel').textContent = n <= total ? `Paso ${n} de ${total}` : 'Generando plan...';
-  if (n === 6) startPlanGeneration();
+  if (n === 9) startPlanGeneration();
 }
 
 function selectCard(groupId, el) {
@@ -877,14 +1005,25 @@ function validateStep() {
   } else if (id === 'step3') {
     const cw = document.getElementById('ob_current_weight').value;
     const tw = document.getElementById('ob_target_weight').value;
+    const age = document.getElementById('ob_age').value;
+    const height = document.getElementById('ob_height').value;
     const level = document.querySelector('#levelCards .big-card.selected');
-    valid = cw && tw && level;
+    valid = cw && tw && age && height && level;
     document.getElementById('next3').disabled = !valid;
   } else if (id === 'step4') {
-    const days = document.querySelector('#daysRow .pill.selected');
-    const equip = document.querySelector('#equipCards .big-card.selected');
-    valid = days && equip;
+    valid = !!document.querySelector('#consistencyCards .big-card.selected');
     document.getElementById('next4').disabled = !valid;
+  } else if (id === 'step5') {
+    const days = document.querySelector('#daysRow .pill.selected');
+    const dur = document.querySelector('#durationRow .pill.selected');
+    const equip = document.querySelector('#equipCards .big-card.selected');
+    valid = days && dur && equip;
+    document.getElementById('next5').disabled = !valid;
+  } else if (id === 'step6') {
+    const job = document.querySelector('#jobCards .big-card.selected');
+    const sleep = document.querySelector('#sleepRow .pill.selected');
+    valid = job && sleep;
+    document.getElementById('next6').disabled = !valid;
   }
 }
 
@@ -892,6 +1031,8 @@ function validateStep() {
 document.getElementById('ob_name').addEventListener('input', validateStep);
 document.getElementById('ob_current_weight').addEventListener('input', validateStep);
 document.getElementById('ob_target_weight').addEventListener('input', validateStep);
+document.getElementById('ob_age').addEventListener('input', validateStep);
+document.getElementById('ob_height').addEventListener('input', validateStep);
 
 async function startPlanGeneration() {
   // Gather data
@@ -901,9 +1042,24 @@ async function startPlanGeneration() {
     goal_detail: document.getElementById('ob_goal_detail').value.trim(),
     current_weight: parseFloat(document.getElementById('ob_current_weight').value),
     target_weight: parseFloat(document.getElementById('ob_target_weight').value),
+    height: parseInt(document.getElementById('ob_height').value),
+    age: parseInt(document.getElementById('ob_age').value),
     fitness_level: document.querySelector('#levelCards .big-card.selected')?.dataset.val,
+    consistency: document.querySelector('#consistencyCards .big-card.selected')?.dataset.val,
+    history: document.getElementById('ob_history').value.trim(),
     available_days: parseInt(document.querySelector('#daysRow .pill.selected')?.dataset.val || '4'),
+    session_duration: parseInt(document.querySelector('#durationRow .pill.selected')?.dataset.val || '60'),
+    preferred_time: document.querySelector('#timeRow .pill.selected')?.dataset.val || 'evening',
     equipment: document.querySelector('#equipCards .big-card.selected')?.dataset.val,
+    job_type: document.querySelector('#jobCards .big-card.selected')?.dataset.val,
+    sleep_hours: parseInt(document.querySelector('#sleepRow .pill.selected')?.dataset.val || '7'),
+    bench: document.getElementById('ob_bench').value.trim(),
+    squat: document.getElementById('ob_squat').value.trim(),
+    deadlift: document.getElementById('ob_deadlift').value.trim(),
+    pullups: document.getElementById('ob_pullups').value.trim(),
+    ohp: document.getElementById('ob_ohp').value.trim(),
+    running: document.getElementById('ob_running').value.trim(),
+    other_marks: document.getElementById('ob_other_marks').value.trim(),
     injuries: document.getElementById('ob_injuries').value.trim(),
     preferences: document.getElementById('ob_preferences').value.trim(),
   };
@@ -960,7 +1116,24 @@ async function startPlanGeneration() {
       injuries: onboardData.injuries || null,
       preferences: onboardData.preferences || null,
       plan: plan,
-      plan_generated_at: new Date().toISOString()
+      plan_generated_at: new Date().toISOString(),
+      extra_data: {
+        height: onboardData.height,
+        age: onboardData.age,
+        consistency: onboardData.consistency,
+        history: onboardData.history,
+        session_duration: onboardData.session_duration,
+        preferred_time: onboardData.preferred_time,
+        job_type: onboardData.job_type,
+        sleep_hours: onboardData.sleep_hours,
+        bench: onboardData.bench,
+        squat: onboardData.squat,
+        deadlift: onboardData.deadlift,
+        pullups: onboardData.pullups,
+        ohp: onboardData.ohp,
+        running: onboardData.running,
+        other_marks: onboardData.other_marks,
+      }
     };
     const { error: saveErr } = await sb.from('v2_profiles').upsert(profileData);
     if (saveErr) throw new Error('Error guardando el plan: ' + saveErr.message);
@@ -1018,40 +1191,64 @@ function buildPlanPrompt(d) {
   const goalMap = { gain_muscle: 'Ganar músculo', lose_weight: 'Perder peso', both: 'Perder peso y ganar músculo' };
   const levelMap = { beginner: 'Principiante (menos de 1 año entrenando)', intermediate: 'Intermedio (1-3 años)', advanced: 'Avanzado (más de 3 años)' };
   const equipMap = { full_gym: 'Gimnasio completo con barras, mancuernas, máquinas y poleas', home: 'Casa con mancuernas, bandas y barra de dominadas', minimal: 'Solo peso corporal y bandas elásticas' };
+  const consistencyMap = { none: 'Empezando de cero, lleva tiempo sin entrenar', irregular: 'Historial irregular con muchas interrupciones', consistent: 'Entrenamiento constante y regular' };
+  const jobMap = { sedentary: 'Trabajo sedentario (oficina/escritorio)', moderate: 'Actividad moderada (de pie, camina bastante)', active: 'Trabajo físico muy activo' };
+  const timeMap = { morning: 'mañana', midday: 'mediodía', evening: 'tarde', night: 'noche' };
 
   const weightDiff = d.target_weight - d.current_weight;
   const isLoss = weightDiff < 0;
+  const bmi = (d.current_weight / ((d.height/100) ** 2)).toFixed(1);
   const today = new Date().toISOString().split('T')[0];
-
-  // Determine if running should be included
   const includeRun = d.goal === 'lose_weight' || d.goal === 'both';
 
-  return `Eres un entrenador personal y nutricionista experto. Crea un plan de entrenamiento y nutrición 100% personalizado para este usuario. RESPONDE ÚNICAMENTE CON JSON VÁLIDO, sin texto adicional antes ni después.
+  return `Eres un entrenador personal y nutricionista experto de élite. Crea un plan de entrenamiento y nutrición 100% personalizado para este usuario. RESPONDE ÚNICAMENTE CON JSON VÁLIDO, sin texto adicional antes ni después.
 
-DATOS DEL USUARIO:
+PERFIL COMPLETO DEL USUARIO:
 - Nombre: ${d.name}
-- Objetivo: ${goalMap[d.goal] || d.goal}
-${d.goal_detail ? `- Evento especial: ${d.goal_detail}` : ''}
-- Peso actual: ${d.current_weight} kg
+- Edad: ${d.age} años
+- Altura: ${d.height} cm | Peso actual: ${d.current_weight} kg | IMC: ${bmi}
 - Peso objetivo: ${d.target_weight} kg (${isLoss ? 'perder' : 'ganar'} ${Math.abs(weightDiff).toFixed(1)} kg)
+${d.goal_detail ? `- Evento especial/fecha: ${d.goal_detail}` : ''}
+- Objetivo principal: ${goalMap[d.goal] || d.goal}
 - Nivel de forma: ${levelMap[d.fitness_level] || d.fitness_level}
+- Consistencia histórica: ${consistencyMap[d.consistency] || d.consistency}
+${d.history ? `- Historial detallado: ${d.history}` : ''}
+
+ESTILO DE VIDA:
+- Trabajo/actividad diaria: ${jobMap[d.job_type] || d.job_type}
+- Horas de sueño: ${d.sleep_hours}h/noche
+- Turno preferido de entrenamiento: ${timeMap[d.preferred_time] || d.preferred_time}
+- Tiempo disponible por sesión: ${d.session_duration} minutos
 - Días disponibles: ${d.available_days} días por semana
 - Equipamiento: ${equipMap[d.equipment] || d.equipment}
-${d.injuries ? `- Lesiones/restricciones: ${d.injuries}` : '- Sin lesiones conocidas'}
-${d.preferences ? `- Preferencias: ${d.preferences}` : ''}
+
+MARCAS ACTUALES (USA ESTO PARA CALIBRAR LOS PESOS — ES LO MÁS IMPORTANTE):
+${d.bench ? `- Press banca: ${d.bench}` : '- Press banca: desconocido, estima según peso corporal y nivel'}
+${d.squat ? `- Sentadilla: ${d.squat}` : '- Sentadilla: desconocido, estima según peso corporal y nivel'}
+${d.deadlift ? `- Peso muerto: ${d.deadlift}` : '- Peso muerto: desconocido, estima según peso corporal y nivel'}
+${d.pullups ? `- Dominadas: ${d.pullups}` : '- Dominadas: desconocido, estima según nivel'}
+${d.ohp ? `- Press militar: ${d.ohp}` : '- Press militar: desconocido, estima según nivel'}
+${d.running ? `- Carrera: ${d.running}` : '- Carrera: nivel desconocido'}
+${d.other_marks ? `- Otros: ${d.other_marks}` : ''}
+
+RESTRICCIONES:
+${d.injuries ? `- Lesiones/zonas a respetar: ${d.injuries}` : '- Sin lesiones conocidas'}
+${d.preferences ? `- Preferencias y manías: ${d.preferences}` : ''}
 - Fecha de hoy: ${today}
 
-REGLAS IMPORTANTES:
+REGLAS CRÍTICAS:
 1. Distribuye ${d.available_days} días de entrenamiento en la semana de forma equilibrada
-2. NO uses ejercicios con barra (press de banca, sentadilla con barra, peso muerto) si el equipamiento es home o minimal
-3. Sí puedes usar mancuernas para equipamiento home. Solo peso corporal + bandas para minimal.
-4. Adapta la intensidad al nivel: ${d.fitness_level === 'beginner' ? 'series de 3, pesos conservadores, ejercicios básicos' : d.fitness_level === 'intermediate' ? 'series de 4, pesos moderados, técnica sólida' : 'series de 4-5, pesos altos, variaciones avanzadas'}
-5. ${includeRun ? 'Incluye 1-2 días de carrera o cardio (run_easy o run_intervals)' : 'Enfócate en fuerza, no es necesario incluir cardio'}
-6. Para peso corporal de ${d.current_weight}kg, los pesos de ejercicios deben ser realistas según nivel
-7. Incluye días de descanso suficientes (mínimo 1 por semana)
-8. NUNCA incluyas: arrancadas olímpicas, clean & press, snatch, o movimientos técnicamente complejos para principiantes/intermedios
-${d.injuries ? `9. Evita ejercicios que afecten: ${d.injuries}` : ''}
-${d.preferences ? `10. Ten en cuenta: ${d.preferences}` : ''}
+2. Duración máxima de cada sesión: ${d.session_duration} minutos. Ajusta el número de ejercicios/series a este tiempo.
+3. NO uses ejercicios con barra si equipamiento es home o minimal
+4. Sí puedes usar mancuernas para home. Solo peso corporal + bandas para minimal.
+5. ${includeRun ? 'Incluye 1-2 días de carrera. Las sesiones de carrera DEBEN tener type: "run" (nunca "gym")' : 'Enfócate en fuerza, sin cardio específico'}
+6. USA LAS MARCAS REALES para calcular los pesos de trabajo (generalmente 70-80% del 1RM estimado). Si no hay marcas, estima conservadoramente según peso corporal y nivel.
+7. Si el sueño es ≤6h, reduce el volumen de entrenamiento un 15-20% para permitir recuperación
+8. Si el trabajo es físico activo, reduce también el volumen y añade más descansos
+9. NUNCA incluyas: clean & press olímpico, snatch, arrancada, o movimientos técnicamente complejos
+10. El plan nutricional debe ajustarse al turno de entrenamiento (${timeMap[d.preferred_time] || 'tarde'}) — pre/post entreno en los momentos correctos
+${d.injuries ? `11. Evita ejercicios que afecten: ${d.injuries}` : ''}
+${d.preferences ? `12. Ten en cuenta: ${d.preferences}` : ''}
 
 RESPONDE CON ESTE JSON EXACTO (completa todos los campos):
 
@@ -1081,6 +1278,17 @@ RESPONDE CON ESTE JSON EXACTO (completa todos los campos):
           "weight": "peso en kg o 'Peso corporal'",
           "note": "Técnica clave o consejo"
         }
+      ]
+    },
+    "run_easy": {
+      "name": "CARRERA FÁCIL — Ritmo conversacional",
+      "icon": "🏃",
+      "type": "run",
+      "duration": "35-45 min",
+      "bg": "#fefce8",
+      "tc": "#854d0e",
+      "exercises": [
+        {"key": "easy_run", "name": "Trote aeróbico", "sets": "1×35-45 min", "weight": "Ritmo conversacional (60-70% FC máx)", "note": "Puedes mantener una conversación. Recuperación activa para el déficit calórico"}
       ]
     },
     "rest": {
