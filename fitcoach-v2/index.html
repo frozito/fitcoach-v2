@@ -1269,7 +1269,12 @@ DEVUELVE ESTE JSON (sin texto extra antes ni después):
   "coach_intro": "Mensaje bienvenida personalizado 2-3 frases para ${d.name} en español"
 }
 
-REGLAS DEL JSON (sé conciso para responder rápido): weekly_schedule claves 0(dom)-6(sab), exactamente ${d.available_days} días de entreno real. Claves de sessions deben coincidir con weekly_schedule. Sesiones de carrera SIEMPRE type:"run". El meal_plan SOLO tiene 2 claves: "1" (menú tipo de día de entreno, 5 comidas) y "rest_day" (día de descanso, 4 comidas) — NO generes un menú por cada día. Horarios adaptados al turno ${timeMap[d.preferred_time] || 'tarde'}. En "detail" de cada comida sé breve (1 frase con cantidades). Añade todas las sesiones de entreno reales necesarias.`;
+REGLAS DEL JSON (CONCISIÓN OBLIGATORIA — debes responder en menos de 20 segundos):
+- weekly_schedule: claves 0(dom)-6(sab), exactamente ${d.available_days} días de entreno real (los demás "rest").
+- CLAVE PARA RESPONDER RÁPIDO: define en "sessions" SOLO las sesiones ÚNICAS y reutiliza sus claves en weekly_schedule. Ej: una rutina empuje/tracción/pierna de 6 días define 3 sesiones (push, pull, legs) y las repite dos veces en la semana. NUNCA dupliques una sesión con otro nombre. Máximo 3-4 sesiones únicas distintas.
+- Máximo 5-6 ejercicios por sesión. Campo "note" muy breve (máx 6 palabras) o vacío.
+- Sesiones de carrera SIEMPRE type:"run".
+- meal_plan SOLO 2 claves: "1" (día de entreno, 5 comidas) y "rest_day" (descanso, 4 comidas). NO un menú por día. "detail" breve (1 frase con cantidades). Horarios según turno ${timeMap[d.preferred_time] || 'tarde'}.`;
 }
 
 // ============================================================
