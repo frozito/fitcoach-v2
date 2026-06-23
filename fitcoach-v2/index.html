@@ -1005,6 +1005,8 @@ async function generatePlan(data) {
     throw new Error('Error generando el plan: ' + response.status + ' ' + err);
   }
   const res = await response.json();
+  if (res.error) throw new Error('Claude API error: ' + (res.error.message || JSON.stringify(res.error)));
+  if (!res.content || !res.content[0]) throw new Error('Respuesta inesperada: ' + JSON.stringify(res).substring(0, 200));
   const text = res.content[0].text;
   // Extract JSON from response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
