@@ -1637,15 +1637,20 @@ function renderStats() {
   const lost = startWeight && latestWeight ? (startWeight - latestWeight).toFixed(1) : '—';
   const lostN = parseFloat(lost);
 
-  // Streak
+  // Streak — cuenta días seguidos en los que apareciste (yes o partial).
+  // Hoy sin marcar NO rompe la racha (el día no ha acabado).
+  // Los días de descanso planificados tampoco la rompen.
   let streak = 0;
-  const sortedLogs = [...allLogs].sort((a,b) => b.date.localeCompare(a.date));
-  const checkDates = new Set(sortedLogs.filter(l => l.done === 'yes').map(l => l.date));
+  const activeDates = new Set(allLogs.filter(l => l.done === 'yes' || l.done === 'partial').map(l => l.date));
   let d = new Date();
-  while (true) {
+  if (!activeDates.has(today())) d.setDate(d.getDate() - 1); // hoy pendiente: empieza por ayer
+  for (let guard = 0; guard < 400; guard++) {
     const ds = d.toISOString().split('T')[0];
-    if (checkDates.has(ds)) { streak++; d.setDate(d.getDate()-1); }
-    else break;
+    if (activeDates.has(ds)) { streak++; d.setDate(d.getDate() - 1); continue; }
+    const sk = userPlan?.weekly_schedule?.[d.getDay()];
+    const isRest = !sk || sk === 'rest' || userPlan?.sessions?.[sk]?.type === 'rest';
+    if (isRest) { d.setDate(d.getDate() - 1); continue; } // descanso no rompe
+    break;
   }
 
   // Pace (kg/week)
@@ -1915,7 +1920,7 @@ function renderHistorial() {
   const addRow = `
     <div class="card" style="margin-bottom:12px">
       <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:6px;text-transform:uppercase">Registrar otro día</label>
-      <input type="date" id="newLogDate" max="${today()}" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px">
+      <input type="date" id="newLogDate" max="${today()}" style="width:100%;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:10px">
       <button class="save-checkin-btn" style="margin:0" onclick="openNewLog()">➕ Añadir registro</button>
     </div>`;
   let filtered = allLogs;
