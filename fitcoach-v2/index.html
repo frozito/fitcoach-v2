@@ -1588,10 +1588,14 @@ function renderCheckin(session, sessionKey) {
     (log.exercise_logs || []).forEach(e => { prev[e.key] = e; });
     const rows = (session.exercises || []).map(ex => {
       const p = prev[ex.key] || {};
+      const showWeight = parseWeightNum(ex.weight) != null; // ejercicios con kg reales
+      const isTime = /seg|min/i.test(ex.sets || '');
+      const repsPlaceholder = isTime ? 'tiempo/seg' : 'reps';
       const wPrefill = (p.weight != null && p.weight !== '') ? p.weight : (parseWeightNum(ex.weight) ?? '');
       const rPrefill = (p.reps != null && p.reps !== '') ? p.reps : (parseTargetReps(ex.sets) ?? '');
       const diff = p.diff || '';
       const pill = (d, emoji, label) => `<button type="button" class="diff-pill ${diff===d?'selected':''}" data-diff="${d}" onclick="selectDiff(this)">${emoji}<span>${label}</span></button>`;
+      const weightInput = showWeight ? `<input type="number" step="0.5" class="ci-ex-weight" placeholder="kg" value="${escHtml(wPrefill)}">` : '';
       return `
         <div class="ex-checkin" data-key="${escHtml(ex.key)}" data-name="${escHtml(ex.name)}">
           <div class="ex-checkin-head">
@@ -1599,8 +1603,8 @@ function renderCheckin(session, sessionKey) {
             <span class="ex-checkin-target">${escHtml(ex.sets)}${ex.weight ? ' · ' + escHtml(ex.weight) : ''}</span>
           </div>
           <div class="ex-checkin-inputs">
-            <input type="number" step="0.5" class="ci-ex-weight" placeholder="kg" value="${escHtml(wPrefill)}">
-            <input type="number" class="ci-ex-reps" placeholder="reps" value="${escHtml(rPrefill)}">
+            ${weightInput}
+            <input type="number" class="ci-ex-reps" placeholder="${repsPlaceholder}" value="${escHtml(rPrefill)}" ${showWeight ? '' : 'style="grid-column:1/-1"'}>
             <div class="diff-pills">${pill('easy','😎','Fácil')}${pill('ok','👌','Justo')}${pill('hard','😣','Duro')}</div>
           </div>
         </div>`;
@@ -1707,8 +1711,8 @@ async function saveCheckin(sessionKey, sessionType) {
   // Registro por ejercicio (días de fuerza)
   const exLogs = [];
   document.querySelectorAll('#checkinArea .ex-checkin').forEach(row => {
-    const w = row.querySelector('.ci-ex-weight').value.trim();
-    const r = row.querySelector('.ci-ex-reps').value.trim();
+    const w = row.querySelector('.ci-ex-weight')?.value.trim() || '';
+    const r = row.querySelector('.ci-ex-reps')?.value.trim() || '';
     const dEl = row.querySelector('.diff-pill.selected');
     const diff = dEl ? dEl.dataset.diff : null;
     if (w || r || diff) {
