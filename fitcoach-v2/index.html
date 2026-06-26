@@ -799,9 +799,17 @@ create policy "own records" on personal_records for all using (auth.uid() = user
       <label>Notas</label>
       <textarea id="editNotes" rows="2"></textarea>
     </div>
-    <div class="modal-field">
+    <div class="modal-field" id="editGymFields">
       <label>Pesos usados</label>
       <input type="text" id="editWeightsUsed" placeholder="ej: Press 60kg, Squat 80kg">
+    </div>
+    <div id="editRunFields" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="modal-field"><label>Km</label><input type="number" step="0.1" id="editKm" placeholder="ej: 5.2"></div>
+        <div class="modal-field"><label>Duración (min)</label><input type="number" id="editDuration" placeholder="ej: 30"></div>
+        <div class="modal-field"><label>Ritmo (min/km)</label><input type="text" id="editPace" placeholder="ej: 6:30"></div>
+        <div class="modal-field"><label>FC media (ppm)</label><input type="number" id="editHr" placeholder="ej: 118"></div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('editLogModal')">Cancelar</button>
@@ -1900,6 +1908,17 @@ function openEditLog(date) {
   document.getElementById('editNutrition').value = log.nutrition || 'good';
   document.getElementById('editNotes').value = log.notes || '';
   document.getElementById('editWeightsUsed').value = log.weights_used || '';
+  // Detectar el tipo de sesión de ese día (del registro o del plan)
+  const dow = new Date(date + 'T12:00:00').getDay();
+  const sk = userPlan?.weekly_schedule?.[dow] || 'rest';
+  const type = log.session_type || userPlan?.sessions?.[sk]?.type || 'gym';
+  const isRun = (type || '').startsWith('run');
+  document.getElementById('editRunFields').style.display = isRun ? 'block' : 'none';
+  document.getElementById('editGymFields').style.display = isRun ? 'none' : 'block';
+  document.getElementById('editKm').value = log.km || '';
+  document.getElementById('editDuration').value = log.duration_min || '';
+  document.getElementById('editPace').value = log.pace || '';
+  document.getElementById('editHr').value = log.hr_avg || '';
   document.getElementById('editLogModal').classList.add('open');
 }
 
@@ -1923,6 +1942,14 @@ async function saveEditLog() {
     session_type: log.session_type || sess?.type || 'gym',
     day_of_week: (log.day_of_week != null) ? log.day_of_week : dow,
   };
+  // Si es día de carrera, guarda también los datos de la carrera
+  const type = payload.session_type || '';
+  if (type.startsWith('run')) {
+    payload.km = parseFloat(document.getElementById('editKm').value) || null;
+    payload.duration_min = parseInt(document.getElementById('editDuration').value) || null;
+    payload.pace = document.getElementById('editPace').value.trim() || null;
+    payload.hr_avg = parseInt(document.getElementById('editHr').value) || null;
+  }
   const { data, error } = await sb.from('v2_session_logs')
     .upsert(payload, { onConflict: 'user_id,date' }).select().single();
   if (error) { showToast('Error: ' + error.message); return; }
