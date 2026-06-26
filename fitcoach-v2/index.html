@@ -702,7 +702,14 @@ create policy "own records" on personal_records for all using (auth.uid() = user
       <div class="week-strip" id="weekStrip"></div>
       <div class="stats-grid" id="statsGrid"></div>
       <div class="chart-wrap">
-        <div class="chart-title">📈 Evolución del peso</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap">
+          <div class="chart-title" style="margin:0">📈 Evolución del peso</div>
+          <div class="plan-tabs" style="margin:0;gap:4px">
+            <button class="plan-tab active" style="padding:5px 10px;font-size:12px" id="wr-dias" onclick="setWeightRange('dias',this)">Días</button>
+            <button class="plan-tab" style="padding:5px 10px;font-size:12px" id="wr-semanas" onclick="setWeightRange('semanas',this)">Semanas</button>
+            <button class="plan-tab" style="padding:5px 10px;font-size:12px" id="wr-meses" onclick="setWeightRange('meses',this)">Meses</button>
+          </div>
+        </div>
         <canvas id="weightChart" height="180"></canvas>
       </div>
       <div class="chart-wrap" id="pullupTracker">
@@ -866,6 +873,7 @@ let todayLogs = {}, allLogs = [], coachAdjustments = {}, personalRecords = [];
 let weightChartInstance = null, sessionsChartInstance = null;
 let histFilter = 'all', onboardData = {};
 let currentFeeling = null;
+let weightRange = 'dias';
 
 // ============================================================
 // INIT
@@ -1673,14 +1681,70 @@ function renderStats() {
     </div>`;
 }
 
+function setWeightRange(r, el) {
+  weightRange = r;
+  document.querySelectorAll('#wr-dias,#wr-semanas,#wr-meses').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderWeightChart();
+}
+
+function mondayOf(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const dow = (d.getDay() + 6) % 7; // 0 = lunes
+  d.setDate(d.getDate() - dow);
+  return d.toISOString().split('T')[0];
+}
+
 function renderWeightChart() {
   const ctx = document.getElementById('weightChart').getContext('2d');
   const weightLogs = [...allLogs].filter(l => l.weight_kg).sort((a,b) => a.date.localeCompare(b.date));
 
-  const labels = weightLogs.map(l => l.date.slice(5));
-  const weights = weightLogs.map(l => l.weight_kg);
-  const target = userProfile.target_weight || userPlan.goals?.target_weight;
-  const targetLine = weights.length ? weights.map(() => target) : [];
+  const startWeight = userPlan.goals?.start_weight || userProfile.current_weight;
+  const targetWeight = userProfile.target_weight || userPlan.goals?.target_weight;
+  const targetDate = userPlan.goals?.target_date;
+  // Fecha de inicio: el primer pesaje registrado, o hoy si no hay ninguno
+  const startDate = weightLogs.length ? weightLogs[0].date : today();
+
+  // Trayectoria ideal lineal entre (startDate, startWeight) y (targetDate, targetWeight)
+  function trajectoryAt(dateStr) {
+    if (!targetDate || !targetWeight || !startWeight) return null;
+    const s = new Date(startDate + 'T12:00:00').getTime();
+    const e = new Date(targetDate + 'T12:00:00').getTime();
+    const x = new Date(dateStr + 'T12:00:00').getTime();
+    if (e <= s) return targetWeight;
+    const frac = Math.min(1, Math.max(0, (x - s) / (e - s)));
+    return +(startWeight + (targetWeight - startWeight) * frac).toFixed(1);
+  }
+
+  // Muestreo según la vista (NO medias: el peso real en cada fecha de referencia)
+  const fmtDay = ds => { const [,m,d] = ds.split('-'); return `${d}/${m}`; };
+  // Último pesaje registrado en esa fecha o antes
+  function weightAtOrBefore(refStr) {
+    let chosen = null;
+    for (const l of weightLogs) { if (l.date <= refStr) chosen = l; else break; }
+    return chosen;
+  }
+  let points = []; // {date, weight, label}
+  if (weightRange === 'dias') {
+    points = weightLogs.map(l => ({ date: l.date, weight: l.weight_kg, label: fmtDay(l.date) }));
+  } else {
+    const step = weightRange === 'semanas' ? 7 : 30;
+    const refs = [];
+    for (let k = 0; k < 16; k++) {
+      const d = new Date(today() + 'T12:00:00');
+      d.setDate(d.getDate() - k * step);
+      refs.push(d.toISOString().split('T')[0]);
+    }
+    refs.reverse(); // de más antiguo a hoy
+    points = refs.map(r => {
+      const l = weightAtOrBefore(r);
+      return l ? { date: r, weight: l.weight_kg, label: fmtDay(r) } : null;
+    }).filter(Boolean);
+  }
+
+  const labels = points.map(p => p.label);
+  const weights = points.map(p => p.weight);
+  const trajectory = points.map(p => trajectoryAt(p.date));
 
   if (weightChartInstance) weightChartInstance.destroy();
   weightChartInstance = new Chart(ctx, {
@@ -1694,24 +1758,28 @@ function renderWeightChart() {
           borderColor: '#007aff',
           backgroundColor: 'rgba(0,122,255,.1)',
           borderWidth: 2.5,
-          pointRadius: 4,
+          pointRadius: weightRange === 'dias' ? 4 : 5,
           tension: 0.3,
           fill: true
         },
         {
           label: 'Objetivo',
-          data: targetLine.length ? targetLine : [target],
+          data: trajectory.length ? trajectory : [targetWeight],
           borderColor: '#ffd60a',
-          borderWidth: 1.5,
-          borderDash: [5,5],
+          borderWidth: 2,
+          borderDash: [6,4],
           pointRadius: 0,
+          tension: 0,
           fill: false
         }
       ]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+      plugins: {
+        legend: { display: true, labels: { font: { size: 11 }, usePointStyle: true, boxWidth: 8 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
       scales: {
         y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 11 } } },
         x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 8 } }
@@ -1834,7 +1902,8 @@ function renderSessionsChart() {
 
 function getWeekLabel(d) {
   const start = new Date(d);
-  start.setDate(d.getDate() - d.getDay());
+  const dow = (d.getDay() + 6) % 7; // 0 = lunes
+  start.setDate(d.getDate() - dow);
   return start.toISOString().split('T')[0].slice(5);
 }
 
@@ -1982,8 +2051,9 @@ function renderPlanSessions() {
   const sessionKeys = new Set();
   Object.values(schedule).forEach(k => sessionKeys.add(k));
 
-  // Build day-by-day view
-  for (let dow = 0; dow < 7; dow++) {
+  // Build day-by-day view (empezando en lunes, convención española)
+  const weekOrder = [1,2,3,4,5,6,0];
+  for (const dow of weekOrder) {
     const key = schedule[dow];
     if (!key) continue;
     const s = userPlan.sessions?.[key];
