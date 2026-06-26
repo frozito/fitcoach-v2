@@ -242,6 +242,21 @@ create policy "own records" on personal_records for all using (auth.uid() = user
   .save-checkin-btn:disabled{opacity:.5}
   .save-success{text-align:center;color:var(--green);font-size:13px;font-weight:600;margin-top:8px;min-height:18px}
 
+  /* Check-in por ejercicio */
+  .ex-checkin-list{display:flex;flex-direction:column;gap:10px}
+  .ex-checkin{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fafafa}
+  .ex-checkin-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+  .ex-checkin-name{font-size:14px;font-weight:600}
+  .ex-checkin-target{font-size:12px;color:var(--sub);white-space:nowrap}
+  .ex-checkin-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ci-ex-weight,.ci-ex-reps{border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;outline:none;width:100%}
+  .ci-ex-weight:focus,.ci-ex-reps:focus{border-color:var(--blue)}
+  .diff-pills{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .diff-pill{border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:15px;transition:.2s}
+  .diff-pill span{font-size:10px;color:var(--sub);font-weight:600}
+  .diff-pill.selected{border-color:var(--blue);background:rgba(0,122,255,.08)}
+  .diff-pill.selected span{color:var(--blue)}
+
   /* Tomorrow preview */
   .tomorrow-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
   .tomorrow-icon{font-size:24px}
@@ -977,6 +992,7 @@ async function loadUserAndStart() {
     await loadAppData();
     renderApp();
     showScreen('appScreen');
+    maybeGenerateCoachNote(); // genera consejo del día en segundo plano
   } else {
     showScreen('onboardingScreen');
     goStep(1);
@@ -1360,6 +1376,76 @@ function renderApp() {
 }
 
 // ============================================================
+// COACH IA — Consejo diario basado en tus datos
+// ============================================================
+// Se llama al abrir la app: genera una nota nueva 1 vez al día si hay datos.
+async function maybeGenerateCoachNote() {
+  if (window._todayCoachNote) return;        // ya hay nota de hoy
+  if (allLogs.length < 2) return;            // poco dato, deja la bienvenida
+  await generateCoachNote(false);
+}
+
+async function generateCoachNote(force) {
+  if (!userPlan || !currentUser) return;
+  const coachNoteArea = document.getElementById('coachNoteArea');
+  if (coachNoteArea) {
+    coachNoteArea.innerHTML = `
+      <div class="coach-note">
+        <div class="coach-note-header"><span>🤖 Coach IA</span></div>
+        <p style="opacity:.7">Analizando tu semana... ⏳</p>
+      </div>`;
+  }
+
+  // Resumen de los últimos registros
+  const recent = allLogs.slice(0, 10);
+  const resumen = recent.map(l => {
+    const d = { yes:'completado', partial:'parcial', no:'no hecho' }[l.done] || '—';
+    let line = `${l.date}: ${l.session_name || 'entreno'} (${d}`;
+    if (l.feeling) line += `, energía ${l.feeling}/10`;
+    if (l.weight_kg) line += `, ${l.weight_kg}kg`;
+    if (l.km) line += `, ${l.km}km`;
+    if (l.notes) line += `, nota: "${l.notes}"`;
+    return line + ')';
+  }).join('\n');
+
+  const dow = new Date().getDay();
+  const sk = userPlan.weekly_schedule?.[dow] || 'rest';
+  const todaySession = userPlan.sessions?.[sk]?.name || 'descanso';
+  const latestWeight = allLogs.find(l => l.weight_kg)?.weight_kg || userProfile.current_weight;
+  const target = userProfile.target_weight || userPlan.goals?.target_weight;
+  const targetDate = userPlan.goals?.target_date;
+  const daysLeft = targetDate ? Math.ceil((new Date(targetDate) - new Date()) / 86400000) : null;
+
+  const prompt = `Eres el entrenador personal de ${userProfile.name}. Háblale de tú, cercano y motivador, en español.
+
+Objetivo: ${userPlan.goals?.event_label || 'mejorar forma física'}. Peso actual ~${latestWeight}kg → objetivo ${target}kg${daysLeft ? `, faltan ${daysLeft} días` : ''}.
+Sesión de hoy: ${todaySession}.
+
+Sus últimos entrenos:
+${resumen}
+
+Escribe UN mensaje corto (2-3 frases, máximo 55 palabras) basándote en esos datos reales: comenta su tendencia (energía, cumplimiento, peso) y dale UNA indicación o ánimo concreto para hoy. No inventes datos que no estén. Responde SOLO con el texto del mensaje, sin comillas ni nada más.`;
+
+  try {
+    const response = await fetch(SUPABASE_URL + '/functions/v1/generate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
+      body: JSON.stringify({ prompt })
+    });
+    const res = await response.json();
+    if (res.error || !res.content || !res.content[0]) throw new Error('sin respuesta');
+    const text = res.content[0].text.trim();
+    await sb.from('v2_coach_notes')
+      .upsert({ user_id: currentUser.id, date: today(), note: text }, { onConflict: 'user_id,date' });
+    window._todayCoachNote = { note: text };
+    renderHoy();
+  } catch(err) {
+    // Si falla, vuelve a pintar lo que hubiera (bienvenida o nota previa)
+    renderHoy();
+  }
+}
+
+// ============================================================
 // HOY TAB
 // ============================================================
 function renderHoy() {
@@ -1377,7 +1463,7 @@ function renderHoy() {
         <div class="coach-note-header"><span>🤖 Coach IA — ${formatDate(t)}</span></div>
         <p>${escHtml(note.note)}</p>
       </div>`;
-  } else if (userPlan.coach_intro && !todayLogs.id) {
+  } else if (userPlan.coach_intro) {
     coachNoteArea.innerHTML = `
       <div class="coach-note">
         <div class="coach-note-header"><span>🤖 Coach IA — Bienvenida</span></div>
@@ -1498,10 +1584,31 @@ function renderCheckin(session, sessionKey) {
         <input type="number" id="ci_hr" value="${escHtml(log.hr_avg||'')}" placeholder="ej: 145">
       </div>`;
   } else if (!isRest) {
+    const prev = {};
+    (log.exercise_logs || []).forEach(e => { prev[e.key] = e; });
+    const rows = (session.exercises || []).map(ex => {
+      const p = prev[ex.key] || {};
+      const wPrefill = (p.weight != null && p.weight !== '') ? p.weight : (parseWeightNum(ex.weight) ?? '');
+      const rPrefill = (p.reps != null && p.reps !== '') ? p.reps : (parseTargetReps(ex.sets) ?? '');
+      const diff = p.diff || '';
+      const pill = (d, emoji, label) => `<button type="button" class="diff-pill ${diff===d?'selected':''}" data-diff="${d}" onclick="selectDiff(this)">${emoji}<span>${label}</span></button>`;
+      return `
+        <div class="ex-checkin" data-key="${escHtml(ex.key)}" data-name="${escHtml(ex.name)}">
+          <div class="ex-checkin-head">
+            <span class="ex-checkin-name">${escHtml(ex.name)}</span>
+            <span class="ex-checkin-target">${escHtml(ex.sets)}${ex.weight ? ' · ' + escHtml(ex.weight) : ''}</span>
+          </div>
+          <div class="ex-checkin-inputs">
+            <input type="number" step="0.5" class="ci-ex-weight" placeholder="kg" value="${escHtml(wPrefill)}">
+            <input type="number" class="ci-ex-reps" placeholder="reps" value="${escHtml(rPrefill)}">
+            <div class="diff-pills">${pill('easy','😎','Fácil')}${pill('ok','👌','Justo')}${pill('hard','😣','Duro')}</div>
+          </div>
+        </div>`;
+    }).join('');
     extraFields = `
       <div class="checkin-field checkin-full">
-        <label>Pesos utilizados</label>
-        <input type="text" id="ci_weights" value="${escHtml(log.weights_used||'')}" placeholder="ej: Press 65kg, Polea 45kg">
+        <label>Registro por ejercicio</label>
+        <div class="ex-checkin-list">${rows}</div>
       </div>`;
   }
 
@@ -1551,6 +1658,28 @@ function setFeeling(n, el) {
   el.classList.add('selected');
 }
 
+function selectDiff(el) {
+  el.parentElement.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Extrae el número de peso de un texto tipo "77.5 kg" o "18 kg c/u" → 77.5 / 18 ; "Peso corp." → null
+function parseWeightNum(str) {
+  if (!str) return null;
+  const m = String(str).match(/(\d+(?:[.,]\d+)?)/);
+  return m ? parseFloat(m[1].replace(',', '.')) : null;
+}
+
+// Extrae las reps objetivo de "4×8" → 8, "4×8-10" → 10 ; ignora AMRAP, tiempos, negativos
+function parseTargetReps(sets) {
+  if (!sets) return null;
+  const s = String(sets);
+  if (/amrap|seg|min|neg|\(/i.test(s)) return null;
+  const m = s.match(/×\s*(\d+)(?:\s*-\s*(\d+))?/);
+  if (!m) return null;
+  return parseInt(m[2] || m[1]);
+}
+
 async function saveCheckin(sessionKey, sessionType) {
   const btn = document.getElementById('saveCheckinBtn');
   btn.disabled = true; btn.textContent = 'Guardando...';
@@ -1569,12 +1698,28 @@ async function saveCheckin(sessionKey, sessionType) {
     weight_kg: parseFloat(document.getElementById('ci_weight')?.value) || null,
     nutrition: document.getElementById('ci_nutrition')?.value || null,
     notes: document.getElementById('ci_notes')?.value?.trim() || null,
-    weights_used: document.getElementById('ci_weights')?.value?.trim() || null,
     km: parseFloat(document.getElementById('ci_km')?.value) || null,
     duration_min: parseInt(document.getElementById('ci_duration')?.value) || null,
     pace: document.getElementById('ci_pace')?.value?.trim() || null,
     hr_avg: parseInt(document.getElementById('ci_hr')?.value) || null,
   };
+
+  // Registro por ejercicio (días de fuerza)
+  const exLogs = [];
+  document.querySelectorAll('#checkinArea .ex-checkin').forEach(row => {
+    const w = row.querySelector('.ci-ex-weight').value.trim();
+    const r = row.querySelector('.ci-ex-reps').value.trim();
+    const dEl = row.querySelector('.diff-pill.selected');
+    const diff = dEl ? dEl.dataset.diff : null;
+    if (w || r || diff) {
+      exLogs.push({ key: row.dataset.key, name: row.dataset.name, weight: w ? parseFloat(w) : null, reps: r ? parseInt(r) : null, diff });
+    }
+  });
+  payload.exercise_logs = exLogs.length ? exLogs : null;
+  // Resumen de texto para el historial / compatibilidad
+  payload.weights_used = exLogs.length
+    ? exLogs.filter(e => e.weight).map(e => `${e.name}: ${e.weight}kg×${e.reps || '-'}`).join(' · ') || null
+    : null;
 
   const { data, error } = await sb.from('v2_session_logs')
     .upsert(payload, { onConflict: 'user_id,date' }).select().single();
